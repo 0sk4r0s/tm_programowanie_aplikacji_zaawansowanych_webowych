@@ -1,56 +1,102 @@
-const addButton: HTMLButtonElement|null = document.querySelector("#todoAddButton");
-const inputTextField: HTMLInputElement|null = document.querySelector("#todoInputField") ;
+const addButton: HTMLButtonElement | null = document.querySelector("#todoAddButton");
+const inputTextField: HTMLInputElement | null = document.querySelector("#todoInputField");
 const todosContainer: HTMLDivElement = document.querySelector("#todoContainer")!;
 
 type Todo = {
-    id: number,
-    title: string,
-    description?: string,
-    isDone?: boolean,
-}
+    id: number;
+    title: string;
+    description?: string;
+    isDone?: number; // 0 = to do 1 = doing 2 = done
+};
 
 let arrayOfTodos: Todo[] = [];
 
-if (addButton && inputTextField && todosContainer){
-    
-    addButton?.addEventListener('click',(e) =>{
-        
-        arrayOfTodos.push({id: arrayOfTodos.length, title: inputTextField?.value});
-        inputTextField.value='';
+if (addButton && inputTextField && todosContainer) {
+    addButton.addEventListener("click", () => {
+        if (inputTextField.value.trim() === "") {
+            alert("Wpisz tytuł zadania!");
+            return;
+        }
+
+        arrayOfTodos.push({
+            id: Date.now(),
+            title: inputTextField.value.trim(),
+            isDone: 0
+        });
+
+        inputTextField.value = "";
         buildList();
-    })
-}
-
-function buildList(){
-    todosContainer.innerHTML = "";
-    arrayOfTodos.forEach(element => {
-        let container = document.createElement("div");
-        container.classList.add("card","card-body","mt-1","shadow");
-
-        let id = document.createElement('p');
-        id.classList.add("small");
-
-        let title = document.createElement('h3');
-        title.classList.add("h3");
-
-        let delButton = document.createElement('button');
-        delButton.classList.add("btn", "btn-danger");
-        delButton.innerText = "Delete";
-
-
-
-
-        title.textContent = "Tytuł: " + element.title;
-        id.textContent = "ID: " + element.id;
-
-        container.appendChild(id);
-        container.appendChild(title);
-        container.appendChild(delButton);
-
-
-        todosContainer?.appendChild(container);
-        
     });
 }
 
-function removeElement(element: HTMLElement) {}
+function buildList() {
+    todosContainer.innerHTML = "";
+
+    arrayOfTodos.forEach((element) => {
+        let container = document.createElement("div");
+        container.classList.add("card", "card-body", "mt-2", "shadow");
+
+        let id = document.createElement("p");
+        id.classList.add("small", "text-muted", "mb-1");
+        id.textContent = "ID: " + element.id;
+
+        let title = document.createElement("h3");
+        title.classList.add("h5", "mb-2");
+        title.textContent = element.title;
+        let statusBadge = document.createElement("span");
+        statusBadge.classList.add("badge", "mb-3");
+        statusBadge.style.width = "fit-content";
+
+        if (element.isDone === 0) {
+            statusBadge.textContent = "To do";
+            statusBadge.classList.add("bg-secondary");
+        } else if (element.isDone === 1) {
+            statusBadge.textContent = "Doing";
+            statusBadge.classList.add("bg-warning", "text-dark");
+        } else if (element.isDone === 2) {
+            statusBadge.textContent = "Done";
+            statusBadge.classList.add("bg-success");
+        }
+
+        let statusSelect = document.createElement("select");
+        statusSelect.classList.add("form-select", "form-select-sm", "mb-3");
+
+        const options = [
+            { value: 0, text: "Zmień status na: To do" },
+            { value: 1, text: "Zmień status na: Doing" },
+            { value: 2, text: "Zmień status na: Done" }
+        ];
+
+        options.forEach(opt => {
+            let optionElement = document.createElement("option");
+            optionElement.value = opt.value.toString();
+            optionElement.textContent = opt.text;
+            if (element.isDone === opt.value) {
+                optionElement.selected = true;
+            }
+            statusSelect.appendChild(optionElement);
+        });
+
+        statusSelect.addEventListener("change", (e) => {
+            let target = e.target as HTMLSelectElement;
+            element.isDone = parseInt(target.value);
+            buildList(); 
+        });
+
+        let deleteButton = document.createElement("button");
+        deleteButton.classList.add("btn", "btn-danger", "btn-sm");
+        deleteButton.textContent = "Usuń zadanie";
+        
+        deleteButton.addEventListener("click", () => {
+            arrayOfTodos = arrayOfTodos.filter(todo => todo.id !== element.id);
+            buildList();
+        });
+        container.appendChild(id);
+        container.appendChild(title);
+        container.appendChild(statusBadge);
+        container.appendChild(statusSelect);
+        container.appendChild(deleteButton);
+        
+        todosContainer.appendChild(container);
+    });
+}
